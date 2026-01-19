@@ -1,6 +1,6 @@
-use crate::types::FullPortInfo;
+use crate::types::ProcessInfo;
 use colored::*;
-use loki_weave::{format_data, to_value, OutputFormat};
+use loki_weave::{OutputFormat, format_data, to_value};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -20,30 +20,29 @@ struct PortStatus {
     uptime_seconds: Option<u64>,
 }
 
-impl From<&FullPortInfo> for PortStatus {
-    fn from(info: &FullPortInfo) -> Self {
+impl From<&ProcessInfo> for PortStatus {
+    fn from(info: &ProcessInfo) -> Self {
         let start_ts = info
-            .extra
             .start_time
             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|d| d.as_secs());
-        let uptime = info.extra.uptime.map(|d| d.as_secs());
+        let uptime = info.uptime.map(|d| d.as_secs());
 
         Self {
-            port: info.base.port,
+            port: info.port,
             status: "in_use".to_string(),
-            process: info.base.process_name.clone(),
-            pid: info.base.pid,
-            user: info.base.user.clone(),
-            command: info.base.command.clone(),
-            tty: info.extra.tty.clone(),
+            process: info.process_name.clone(),
+            pid: info.pid,
+            user: info.user.clone().unwrap_or_default(),
+            command: info.command.clone().unwrap_or_default(),
+            tty: info.tty.clone(),
             start_time: start_ts,
             uptime_seconds: uptime,
         }
     }
 }
 
-fn prepare_data(port: u16, infos: &[FullPortInfo]) -> Value {
+fn prepare_data(port: u16, infos: &[ProcessInfo]) -> Value {
     if infos.is_empty() {
         let status = PortStatus {
             port,
@@ -69,7 +68,7 @@ fn prepare_data(port: u16, infos: &[FullPortInfo]) -> Value {
 }
 
 /// Format avec loki_formatter (json, yaml, toml, xml, toon)
-pub fn print_loki(port: u16, infos: &[FullPortInfo], format: OutputFormat) {
+pub fn print_loki(port: u16, infos: &[ProcessInfo], format: OutputFormat) {
     let data = prepare_data(port, infos);
     match format_data(&data, format) {
         Ok(output) => println!("{}", output),
@@ -78,7 +77,7 @@ pub fn print_loki(port: u16, infos: &[FullPortInfo], format: OutputFormat) {
 }
 
 /// Format humain avec couleurs
-pub fn print_human(port: u16, infos: &[FullPortInfo]) {
+pub fn print_human(port: u16, infos: &[ProcessInfo]) {
     if infos.is_empty() {
         println!(
             "{} Port {} is {}",
@@ -115,34 +114,38 @@ fn format_since(start: &std::time::SystemTime) -> String {
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
-fn print_process_block(info: &FullPortInfo) {
+fn print_process_block(info: &ProcessInfo) {
     println!(
         "{} Port {} is {}",
         "●".red().bold(),
-        info.base.port.to_string().cyan(),
+        info.port.to_string().cyan(),
         "in use".red()
     );
     println!();
 
+    println!("  {}  {}", "Process:".bold(), info.process_name.yellow());
+    println!("  {}      {}", "PID:".bold(), info.pid);
     println!(
-        "  {}  {}",
-        "Process:".bold(),
-        info.base.process_name.yellow()
+        "  {}     {}",
+        "User:".bold(),
+        info.user.clone().unwrap_or_default()
     );
-    println!("  {}      {}", "PID:".bold(), info.base.pid);
-    println!("  {}     {}", "User:".bold(), info.base.user);
 
-    if let Some(tty) = &info.extra.tty {
+    if let Some(tty) = &info.tty {
         println!("  {}      {}", "TTY:".bold(), tty);
     }
-    if let Some(start) = &info.extra.start_time {
+    if let Some(start) = &info.start_time {
         println!("  {}  {}", "Since:".bold(), format_since(start));
     }
-    if let Some(up) = &info.extra.uptime {
+    if let Some(up) = &info.uptime {
         println!("  {} {}", "Uptime:".bold(), format_duration(*up));
     }
 
     println!();
-    println!("  {}  {}", "Command:".bold(), info.base.command.dimmed());
+    println!(
+        "  {}  {}",
+        "Command:".bold(),
+        info.command.clone().unwrap_or_default().dimmed()
+    );
     println!();
 }

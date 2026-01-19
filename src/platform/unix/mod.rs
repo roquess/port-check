@@ -1,4 +1,4 @@
-use crate::types::{BasePortInfo, FullPortInfo, ProcessExtra};
+use crate::types::ProcessInfo;
 use std::process::Command;
 
 #[cfg(target_os = "linux")]
@@ -14,11 +14,10 @@ mod bsd;
 
 trait UnixProvider {
     fn port_command(port: u16) -> Command;
-    fn parse_port_line(line: &str) -> Option<BasePortInfo>;
-    fn enrich_process(pid: u32) -> ProcessExtra;
+    fn parse_port_line(line: &str) -> Option<ProcessInfo>;
 }
 
-pub fn check_port(port: u16) -> Result<Vec<FullPortInfo>, String> {
+pub fn check_port(port: u16) -> Result<Vec<ProcessInfo>, String> {
     #[cfg(target_os = "linux")]
     type Provider = linux::Linux;
 
@@ -37,13 +36,8 @@ pub fn check_port(port: u16) -> Result<Vec<FullPortInfo>, String> {
     let mut results = Vec::new();
 
     for line in String::from_utf8_lossy(&output.stdout).lines() {
-        if let Some(base) = Provider::parse_port_line(line) {
-            let extra_info = ProcessExtra::default();
-
-            results.push(FullPortInfo {
-                base,
-                extra: extra_info,
-            });
+        if let Some(info) = Provider::parse_port_line(line) {
+            results.push(info);
         }
     }
 

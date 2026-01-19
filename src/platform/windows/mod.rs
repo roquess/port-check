@@ -1,7 +1,7 @@
 mod process;
 
 use crate::platform::backend::{PlatformProvider, PortSource};
-use crate::types::PortInfo;
+use crate::types::ProcessInfo;
 use std::process::Command;
 
 pub struct Windows;
@@ -13,7 +13,7 @@ impl PlatformProvider for Windows {
         Ok(PortSource::Command(cmd))
     }
 
-    fn parse_port(row: &str) -> Option<PortInfo> {
+    fn parse_port(row: &str) -> Option<ProcessInfo> {
         let parts: Vec<&str> = row.split_whitespace().collect();
         if parts.len() < 5 || parts[0] != "TCP" || parts[3] != "LISTENING" {
             return None;
@@ -25,13 +25,15 @@ impl PlatformProvider for Windows {
 
         let (process_name, command, user) = process::process_info_from_pid(pid);
 
-        Some(PortInfo {
+        Some(ProcessInfo {
             port,
-            process_name: process_name.unwrap_or_else(|| "unknown".into()),
             pid,
-            user: user.unwrap_or_default(),
-            command: command.unwrap_or_default(),
+            process_name: process_name.unwrap_or_else(|| "unknown".into()),
+            user,
+            command,
+            tty: None,
+            start_time: None,
+            uptime: None,
         })
     }
 }
-

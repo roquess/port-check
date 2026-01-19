@@ -1,5 +1,5 @@
 use super::UnixProvider;
-use crate::types::{BasePortInfo, ProcessExtra};
+use crate::types::ProcessInfo;
 use std::process::Command;
 
 pub struct Bsd;
@@ -11,11 +11,7 @@ impl UnixProvider for Bsd {
         cmd
     }
 
-    fn parse_port_line(_line: &str) -> Option<BasePortInfo> {
+    fn parse_port_line(_line: &str) -> Option<ProcessInfo> {
         None
-    }
-
-    fn enrich_process(_pid: u32) -> ProcessExtra {
-        ProcessExtra::default()
     }
 }

@@ -13,7 +13,7 @@ use colored::Colorize;
 /// Main entry point
 fn main() {
     let cli = Cli::parse_args();
-    
+
     for port in &cli.ports {
         match platform::check_port(*port) {
             Ok(full_infos) => {
@@ -27,7 +27,7 @@ fn main() {
 }
 
 /// Print output based on CLI format
-fn print_output(port: u16, infos: &[types::FullPortInfo], cli: &Cli) {
+fn print_output(port: u16, infos: &[types::ProcessInfo], cli: &Cli) {
     match cli.get_output_format() {
         Some(output_format) => {
             // Format structuré (json, yaml, toml, xml, toon)

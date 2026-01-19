@@ -1,4 +1,4 @@
-use crate::types::FullPortInfo;
+use crate::types::ProcessInfo;
 
 mod backend;
 
@@ -9,7 +9,7 @@ mod windows;
 
 use backend::run;
 
-pub fn check_port(port: u16) -> Result<Vec<FullPortInfo>, String> {
+pub fn check_port(port: u16) -> Result<Vec<ProcessInfo>, String> {
     #[cfg(windows)]
     {
         return run::<windows::Windows>(port);
