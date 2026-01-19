@@ -43,6 +43,6 @@ pub fn check_port(port: u16) -> Result<Vec<ProcessInfo>, String> {
 
     Ok(results
         .into_iter()
-        .filter(|i| i.base.port == port)
+        .filter(|i| i.port == port)
         .collect())
 }
